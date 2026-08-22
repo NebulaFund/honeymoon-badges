@@ -48,15 +48,27 @@ Full-resolution originals are kept in `source-art/`, outside what gets served.
 
 ## Hosting it
 
-The folder is static — any free host works. **GitHub Pages fits this best**, because adding a
-badge then means editing `badges.json` in the browser and the site redeploys itself:
+The repo here is already committed and ready to push. `gh` is installed; the only step that
+needs your credentials is the login:
 
-1. Create a repo, push this folder.
-2. Settings → Pages → deploy from `main`.
-3. Open the URL it gives you.
+```
+gh auth login
+```
 
-Cloudflare Pages and Netlify also work if you'd rather drag the folder in — but then adding a
-badge means re-uploading.
+After that, one command publishes it:
+
+```
+gh repo create honeymoon-badges --public --source=. --push \
+  && gh api -X POST repos/:owner/honeymoon-badges/pages \
+       -f "source[branch]=main" -f "source[path]=/"
+```
+
+GitHub Pages on a free account requires the repo to be **public** — the URL is obscure but not
+secret. If you'd rather it not be, Cloudflare Pages takes a direct folder upload with no repo
+at all; the trade is that adding a badge then means re-uploading rather than editing one file.
+
+Once it's live, adding a badge is: edit `badges.json` on github.com, commit, done — the site
+redeploys itself and her home screen app picks it up next time she opens it.
 
 If you ever want the badge list to live somewhere separate from the app, set `REMOTE_URL` at
 the top of `app.js` to a hosted `badges.json`. The app checks it on every open and falls back

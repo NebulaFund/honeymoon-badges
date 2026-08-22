@@ -1,0 +1,55 @@
+{
+  "title": "Honeymoon Badges",
+  "subtitle": "May · New Zealand, 2026",
+  "footer": "",
+  "badges": [
+    {
+      "id": "emirates-business-class",
+      "name": "Emirates Business Class",
+      "tier": "bronze",
+      "earned": true,
+      "image": "assets/badges/emirates-business-class.jpg",
+      "description": "You made it to Auckland in one of the nicest seats in the world."
+    },
+    {
+      "id": "franz-josef-heli-hike",
+      "name": "Franz Josef Heli Hike",
+      "tier": "gold",
+      "earned": true,
+      "image": "assets/badges/franz-josef-heli-hike.jpg",
+      "description": "A helicopter drop onto the glacier, then hours out on the ice in crampons."
+    },
+    {
+      "id": "lake-matheson-walk",
+      "name": "Lake Matheson Walk",
+      "tier": "silver",
+      "earned": true,
+      "image": "assets/badges/lake-matheson-walk.jpg",
+      "description": "The mirror lake — an easy and fun walk."
+    },
+    {
+      "id": "hooker-valley-trek",
+      "name": "Hooker Valley Trek",
+      "tier": "platinum",
+      "earned": true,
+      "image": "assets/badges/hooker-valley-trek.jpg",
+      "description": "The goal is to enjoy the trek."
+    },
+    {
+      "id": "pukaki-stargazing",
+      "name": "Pukaki Stargazing",
+      "tier": "bronze",
+      "earned": true,
+      "image": "assets/badges/pukaki-stargazing.jpg",
+      "description": "Cold, but the sky was nice."
+    },
+
+    { "id": "todo-1", "earned": false, "hint": "Not yet." },
+    { "id": "todo-2", "earned": false, "hint": "Not yet." },
+    { "id": "todo-3", "earned": false, "hint": "Not yet." },
+    { "id": "todo-4", "earned": false, "hint": "Not yet." },
+    { "id": "todo-5", "earned": false, "hint": "Not yet." },
+    { "id": "todo-6", "earned": false, "hint": "Not yet." },
+    { "id": "todo-7", "earned": false, "hint": "Not yet." }
+  ]
+}

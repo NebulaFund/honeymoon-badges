@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Honeymoon Badges">
+<meta name="theme-color" content="#0f2018">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="stylesheet" href="styles.css">
+<title>Honeymoon Badges</title>
+</head>
+<body>
+
+<div class="case" id="case">
+
+  <header class="lid">
+    <div class="lid-inner">
+      <div class="lid-text">
+        <h1 id="case-title">Honeymoon Badges</h1>
+        <p id="case-subtitle">Loading…</p>
+      </div>
+      <div class="progress-ring" id="ring" role="img" aria-label="Completion">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="ring-track" cx="50" cy="50" r="43"/>
+          <circle class="ring-fill" id="ring-fill" cx="50" cy="50" r="43"/>
+        </svg>
+        <div class="ring-label"><b id="ring-pct">0%</b><span id="ring-count">0 / 0</span></div>
+      </div>
+    </div>
+    <div class="tier-bar" id="tier-bar"></div>
+  </header>
+
+  <main class="tray" id="tray" aria-live="polite"></main>
+
+  <footer class="case-foot">
+    <span id="foot-note"></span>
+  </footer>
+</div>
+
+<div class="sheet-scrim" id="scrim" hidden></div>
+<section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-name">
+  <div class="sheet-grab"></div>
+  <div class="sheet-body">
+    <div class="sheet-badge" id="sheet-badge"></div>
+    <div class="sheet-tier" id="sheet-tier"></div>
+    <h2 id="sheet-name"></h2>
+    <p class="sheet-desc" id="sheet-desc"></p>
+    <dl class="sheet-meta" id="sheet-meta"></dl>
+  </div>
+  <button class="sheet-close" id="sheet-close" type="button">Close</button>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>

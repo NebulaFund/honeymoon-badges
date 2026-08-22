@@ -3,6 +3,8 @@
 A view-only badge catalog for May, built as a web app that installs to the iPhone home screen.
 No App Store, no Xcode, no Apple Developer account.
 
+**Live:** https://nebulafund.github.io/honeymoon-badges/
+
 ## Adding or unlocking a badge
 
 Everything lives in `badges.json`. One entry per badge:
@@ -48,27 +50,11 @@ Full-resolution originals are kept in `source-art/`, outside what gets served.
 
 ## Hosting it
 
-The repo here is already committed and ready to push. `gh` is installed; the only step that
-needs your credentials is the login:
+Already live on GitHub Pages, served from `main` at the repo root.
 
-```
-gh auth login
-```
-
-After that, one command publishes it:
-
-```
-gh repo create honeymoon-badges --public --source=. --push \
-  && gh api -X POST repos/:owner/honeymoon-badges/pages \
-       -f "source[branch]=main" -f "source[path]=/"
-```
-
-GitHub Pages on a free account requires the repo to be **public** — the URL is obscure but not
-secret. If you'd rather it not be, Cloudflare Pages takes a direct folder upload with no repo
-at all; the trade is that adding a badge then means re-uploading rather than editing one file.
-
-Once it's live, adding a badge is: edit `badges.json` on github.com, commit, done — the site
-redeploys itself and her home screen app picks it up next time she opens it.
+**To add or change a badge:** edit `badges.json` on github.com, commit, and Pages rebuilds
+within a minute. Her home screen app picks it up the next time she opens it — no reinstall.
+New artwork goes in `assets/badges/` the same way (Add file → Upload files).
 
 If you ever want the badge list to live somewhere separate from the app, set `REMOTE_URL` at
 the top of `app.js` to a hosted `badges.json`. The app checks it on every open and falls back

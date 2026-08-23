@@ -43,13 +43,46 @@
       "image": "assets/badges/pukaki-stargazing.jpg",
       "description": "Cold, but the sky was nice."
     },
-
-    { "id": "todo-1", "earned": false, "hint": "Not yet." },
-    { "id": "todo-2", "earned": false, "hint": "Not yet." },
-    { "id": "todo-3", "earned": false, "hint": "Not yet." },
-    { "id": "todo-4", "earned": false, "hint": "Not yet." },
-    { "id": "todo-5", "earned": false, "hint": "Not yet." },
-    { "id": "todo-6", "earned": false, "hint": "Not yet." },
-    { "id": "todo-7", "earned": false, "hint": "Not yet." }
+    {
+      "id": "queenstown-jetty",
+      "name": "Queenstown Jetty",
+      "tier": "bronze",
+      "earned": true,
+      "image": "assets/badges/queenstown-jetty.jpg",
+      "description": "Made some duck friends."
+    },
+    {
+      "id": "beat-constipation",
+      "name": "Beat Constipation",
+      "tier": "platinum",
+      "earned": true,
+      "image": "assets/badges/beat-constipation.jpg",
+      "description": "You made it!"
+    },
+    {
+      "id": "todo-1",
+      "earned": false,
+      "hint": "Not yet."
+    },
+    {
+      "id": "todo-2",
+      "earned": false,
+      "hint": "Not yet."
+    },
+    {
+      "id": "todo-3",
+      "earned": false,
+      "hint": "Not yet."
+    },
+    {
+      "id": "todo-4",
+      "earned": false,
+      "hint": "Not yet."
+    },
+    {
+      "id": "todo-5",
+      "earned": false,
+      "hint": "Not yet."
+    }
   ]
 }

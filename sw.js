@@ -1,6 +1,6 @@
 /* Cache the shell so the case opens instantly and works offline.
    Badge data is fetched network-first so new badges show up. */
-const CACHE = "badgecase-v1";
+const CACHE = "badgecase-v2";
 const SHELL = ["index.html", "styles.css", "app.js", "manifest.webmanifest", "assets/icon-180.png"];
 
 self.addEventListener("install", e => {

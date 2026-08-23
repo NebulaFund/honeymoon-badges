@@ -63,59 +63,81 @@ function trimToBadge(img) {
   ctx.drawImage(img, 0, 0);
   const im = ctx.getImageData(0, 0, W, H), d = im.data;
 
-  // already transparent at the corners → nothing to do
+  // already transparent at the corners -> nothing to do
   if ([0, (W - 1) * 4, (H - 1) * W * 4, (W * H - 1) * 4].every(i => d[i + 3] < 8)) return null;
 
-  const WHITE = 238, SOFT = 202;
+  // The page colour, as the median of the border pixels — it is not always white; some art
+  // sits on a light grey that drifts across the image.
+  const chan = [[], [], []];
+  const sample = (x, y) => { const i = (y * W + x) * 4; chan[0].push(d[i]); chan[1].push(d[i+1]); chan[2].push(d[i+2]); };
+  for (let x = 0; x < W; x += 4) { sample(x, 0); sample(x, H - 1); }
+  for (let y = 0; y < H; y += 4) { sample(0, y); sample(W - 1, y); }
+  const bg = chan.map(a => a.sort((p, q) => p - q)[a.length >> 1]);
+
+  // Step 1 — remove the page. Deliberately conservative: only pixels close to the page
+  // colour, flood-filled inward so white inside the art survives. A drop shadow is far from the
+  // page colour and stays behind; it gets removed geometrically in step 2 instead. Chasing
+  // it here with a looser rule walks the fill down soft gradients into the artwork.
+  const TOL = 30;
+  const isPage = i => Math.hypot(d[i] - bg[0], d[i+1] - bg[1], d[i+2] - bg[2]) <= TOL;
   const seen = new Uint8Array(W * H), stack = [];
-  const push = (x, y) => {
-    const p = y * W + x;
-    if (seen[p]) return;
-    const i = p * 4;
-    if (d[i] < WHITE || d[i + 1] < WHITE || d[i + 2] < WHITE) return;
-    seen[p] = 1; stack.push(p);
-  };
-  for (let x = 0; x < W; x++) { push(x, 0); push(x, H - 1); }
-  for (let y = 0; y < H; y++) { push(0, y); push(W - 1, y); }
+  const seed = (x, y) => { const p = y * W + x; if (!seen[p] && isPage(p * 4)) { seen[p] = 1; stack.push(p); } };
+  for (let x = 0; x < W; x++) { seed(x, 0); seed(x, H - 1); }
+  for (let y = 0; y < H; y++) { seed(0, y); seed(W - 1, y); }
   while (stack.length) {
     const p = stack.pop(), x = p % W, y = (p - x) / W;
     d[p * 4 + 3] = 0;
-    if (x > 0)     push(x - 1, y);
-    if (x < W - 1) push(x + 1, y);
-    if (y > 0)     push(x, y - 1);
-    if (y < H - 1) push(x, y + 1);
+    if (x > 0)     seed(x - 1, y);
+    if (x < W - 1) seed(x + 1, y);
+    if (y > 0)     seed(x, y - 1);
+    if (y < H - 1) seed(x, y + 1);
   }
 
-  // feather the anti-aliased fringe the flood fill leaves behind
+  // Step 2 — the medallion is a disc, so find the largest circle that fits inside what is
+  // left and throw away everything outside it. That removes the drop shadow, which clings to
+  // the edge as a thin crescent, without any colour rule having to tell shadow from artwork
+  // (it can't: the contact shadow and the badge's own outline occupy the same darkness).
+  const INF = 1e9, dist = new Float32Array(W * H);
+  for (let p = 0; p < W * H; p++) dist[p] = d[p * 4 + 3] > 10 ? INF : 0;
+  const D1 = 1, D2 = 1.4142;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const p = y * W + x, i = p * 4;
+    const p = y * W + x; if (!dist[p]) continue;
+    let v = dist[p];
+    if (y > 0)             v = Math.min(v, dist[p - W] + D1);
+    if (x > 0)             v = Math.min(v, dist[p - 1] + D1);
+    if (y > 0 && x > 0)    v = Math.min(v, dist[p - W - 1] + D2);
+    if (y > 0 && x < W-1)  v = Math.min(v, dist[p - W + 1] + D2);
+    dist[p] = v;
+  }
+  let best = 0, bcx = 0, bcy = 0;
+  for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) {
+    const p = y * W + x; if (!dist[p]) continue;
+    let v = dist[p];
+    if (y < H-1)            v = Math.min(v, dist[p + W] + D1);
+    if (x < W-1)            v = Math.min(v, dist[p + 1] + D1);
+    if (y < H-1 && x < W-1) v = Math.min(v, dist[p + W + 1] + D2);
+    if (y < H-1 && x > 0)   v = Math.min(v, dist[p + W - 1] + D2);
+    dist[p] = v;
+    if (v > best) { best = v; bcx = x; bcy = y; }
+  }
+  if (best < Math.min(W, H) * 0.08) return null;   // no disc found — leave the art alone
+
+  const R = best;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
     if (!d[i + 3]) continue;
-    const edge = (x > 0 && !d[(p - 1) * 4 + 3]) || (x < W - 1 && !d[(p + 1) * 4 + 3]) ||
-                 (y > 0 && !d[(p - W) * 4 + 3]) || (y < H - 1 && !d[(p + W) * 4 + 3]);
-    if (!edge) continue;
-    const L = d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114;
-    if (L > SOFT) d[i + 3] = Math.max(0, Math.round(255 * (WHITE - L) / (WHITE - SOFT)));
+    const r = Math.hypot(x - bcx, y - bcy);
+    if (r > R) d[i + 3] = 0;
+    else if (r > R - 1.5) d[i + 3] = Math.round(d[i + 3] * (R - r) / 1.5);
   }
 
-  // bounding box of what survived
-  let x0 = W, y0 = H, x1 = -1, y1 = -1;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    if (d[(y * W + x) * 4 + 3] > 10) {
-      if (x < x0) x0 = x; if (x > x1) x1 = x;
-      if (y < y0) y0 = y; if (y > y1) y1 = y;
-    }
-  }
-  if (x1 < 0) return null;
-
-  // square crop around it, with a little breathing room
+  // square crop around the disc, with a little breathing room
   ctx.putImageData(im, 0, 0);
-  const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
-  const side = Math.ceil(Math.max(bw, bh) * 1.05);
+  const side = Math.ceil(R * 2 * 1.06);
   const size = Math.min(512, side);
   const out = document.createElement("canvas");
   out.width = out.height = size;
-  out.getContext("2d").drawImage(
-    cv, x0 - (side - bw) / 2, y0 - (side - bh) / 2, side, side, 0, 0, size, size);
+  out.getContext("2d").drawImage(cv, bcx - side / 2, bcy - side / 2, side, side, 0, 0, size, size);
   return out.toDataURL("image/png");
 }
 

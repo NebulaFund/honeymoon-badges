@@ -93,36 +93,78 @@ function trimToBadge(img) {
     if (y < H - 1) seed(x, y + 1);
   }
 
-  // Step 2 — the medallion is a disc, so find the largest circle that fits inside what is
-  // left and throw away everything outside it. That removes the drop shadow, which clings to
-  // the edge as a thin crescent, without any colour rule having to tell shadow from artwork
-  // (it can't: the contact shadow and the badge's own outline occupy the same darkness).
-  const INF = 1e9, dist = new Float32Array(W * H);
-  for (let p = 0; p < W * H; p++) dist[p] = d[p * 4 + 3] > 10 ? INF : 0;
-  const D1 = 1, D2 = 1.4142;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const p = y * W + x; if (!dist[p]) continue;
-    let v = dist[p];
-    if (y > 0)             v = Math.min(v, dist[p - W] + D1);
-    if (x > 0)             v = Math.min(v, dist[p - 1] + D1);
-    if (y > 0 && x > 0)    v = Math.min(v, dist[p - W - 1] + D2);
-    if (y > 0 && x < W-1)  v = Math.min(v, dist[p - W + 1] + D2);
-    dist[p] = v;
-  }
-  let best = 0, bcx = 0, bcy = 0;
-  for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) {
-    const p = y * W + x; if (!dist[p]) continue;
-    let v = dist[p];
-    if (y < H-1)            v = Math.min(v, dist[p + W] + D1);
-    if (x < W-1)            v = Math.min(v, dist[p + 1] + D1);
-    if (y < H-1 && x < W-1) v = Math.min(v, dist[p + W + 1] + D2);
-    if (y < H-1 && x > 0)   v = Math.min(v, dist[p + W - 1] + D2);
-    dist[p] = v;
-    if (v > best) { best = v; bcx = x; bcy = y; }
-  }
-  if (best < Math.min(W, H) * 0.08) return null;   // no disc found — leave the art alone
+  // Step 2 — find the rim. The medallion is a true circle, so fit one rather than trusting
+  // the leftover blob, which still has the drop shadow stuck to it. The signal that
+  // separates them is detail, not colour or brightness: the badge is full of edges, while
+  // the page and its shadow are smooth ramps. So take the outermost *edge* pixel along each
+  // angle — that is the rim — and fit a circle through those points.
+  const lum = new Float32Array(W * H);
+  for (let p = 0; p < W * H; p++) lum[p] = d[p*4] * .299 + d[p*4+1] * .587 + d[p*4+2] * .114;
 
-  const R = best;
+  const EDGE = 26;
+  let ecx = 0, ecy = 0, ecount = 0;
+  const edge = new Uint8Array(W * H);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const p = y * W + x;
+    const g = Math.abs(lum[p + 1] - lum[p - 1]) + Math.abs(lum[p + W] - lum[p - W]);
+    if (g > EDGE) { edge[p] = 1; ecx += x; ecy += y; ecount++; }
+  }
+  if (ecount < 500) return null;
+  ecx /= ecount; ecy /= ecount;
+
+  // outermost edge pixel per angle, ignoring specks with no edge neighbours
+  const RAYS = 720, far = new Float64Array(RAYS), fx = new Float64Array(RAYS), fy = new Float64Array(RAYS);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const p = y * W + x;
+    if (!edge[p]) continue;
+    if (edge[p-1] + edge[p+1] + edge[p-W] + edge[p+W] < 2) continue;   // isolated noise
+    const dx = x - ecx, dy = y - ecy, r = Math.hypot(dx, dy);
+    let k = Math.floor((Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI) * RAYS);
+    if (k >= RAYS) k = RAYS - 1;
+    if (r > far[k]) { far[k] = r; fx[k] = x; fy[k] = y; }
+  }
+  let pts = [];
+  for (let k = 0; k < RAYS; k++) if (far[k] > 0) pts.push([fx[k], fy[k]]);
+  if (pts.length < RAYS * 0.5) return null;
+
+  // algebraic circle fit, twice, dropping points that miss the fitted radius
+  let bcx = ecx, bcy = ecy, R = 0;
+  for (let pass = 0; pass < 3; pass++) {
+    let Sx=0,Sy=0,Sxx=0,Syy=0,Sxy=0,Sxz=0,Syz=0,Sz=0;
+    const n = pts.length;
+    for (const [x, y] of pts) {
+      const z = x*x + y*y;
+      Sx+=x; Sy+=y; Sxx+=x*x; Syy+=y*y; Sxy+=x*y; Sxz+=x*z; Syz+=y*z; Sz+=z;
+    }
+    const m = [[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, n]], v = [Sxz, Syz, Sz];
+    for (let i = 0; i < 3; i++) {                        // gaussian elimination
+      let p = i;
+      for (let j = i+1; j < 3; j++) if (Math.abs(m[j][i]) > Math.abs(m[p][i])) p = j;
+      [m[i], m[p]] = [m[p], m[i]]; [v[i], v[p]] = [v[p], v[i]];
+      if (!m[i][i]) return null;
+      for (let j = i+1; j < 3; j++) {
+        const f = m[j][i] / m[i][i];
+        for (let c = i; c < 3; c++) m[j][c] -= f * m[i][c];
+        v[j] -= f * v[i];
+      }
+    }
+    const sol = [0,0,0];
+    for (let i = 2; i >= 0; i--) {
+      let t = v[i];
+      for (let c = i+1; c < 3; c++) t -= m[i][c] * sol[c];
+      sol[i] = t / m[i][i];
+    }
+    bcx = sol[0] / 2; bcy = sol[1] / 2;
+    R = Math.sqrt(Math.max(0, sol[2] + bcx*bcx + bcy*bcy));
+    if (pass < 2) {
+      const tol = Math.max(3, R * 0.04);
+      const keep = pts.filter(([x,y]) => Math.abs(Math.hypot(x-bcx, y-bcy) - R) <= tol);
+      if (keep.length < RAYS * 0.4) break;
+      pts = keep;
+    }
+  }
+  if (!(R > Math.min(W, H) * 0.15) || R > Math.max(W, H) * 0.6) return null;
+
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4;
     if (!d[i + 3]) continue;

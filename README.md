@@ -35,10 +35,20 @@ order from this file. Locked ones fall to the back in tier order.
 
 **Drop the generated images in as-is.** No cropping, no background removal, no resizing.
 
-The app preps each badge as it loads: it flood-fills the white page inward from the edges,
-keys it to transparent, then crops square to the medallion. White *inside* the art — the
-helicopter, the snow, the diamonds — is untouched, because the fill only reaches what
-connects to the border.
+The app preps each badge as it loads, in two steps:
+
+1. **Remove the page.** Flood-filled inward from the edges, so white *inside* the art — the
+   helicopter, the snow, the diamonds — survives. The page colour is measured from the border
+   rather than assumed to be white, because some of the art sits on a light grey that drifts
+   across the image.
+2. **Crop to the rim.** The medallion is a true circle, so the app finds it and crops to it
+   exactly. It locates the rim by detail rather than by colour: the badge is full of edges
+   while the page and any drop shadow are smooth ramps, so the outermost edge pixel along each
+   angle is the rim. A circle is fitted through those points and everything outside is dropped.
+
+That second step is what removes a drop shadow. Colour alone cannot: a contact shadow reaches
+the same darkness as the badge's own outline, and a silver rim is brighter than the grey page
+it sits on.
 
 - Any size, any aspect ratio, medallion anywhere on the page. PNG or JPEG.
 - Art that already has a transparent background passes through untouched.

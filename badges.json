@@ -52,14 +52,6 @@
       "description": "Made some duck friends."
     },
     {
-      "id": "beat-constipation",
-      "name": "Beat Constipation",
-      "tier": "platinum",
-      "earned": true,
-      "image": "assets/badges/beat-constipation.jpg",
-      "description": "You made it!"
-    },
-    {
       "id": "todo-1",
       "earned": false,
       "hint": "Not yet."
@@ -81,6 +73,11 @@
     },
     {
       "id": "todo-5",
+      "earned": false,
+      "hint": "Not yet."
+    },
+    {
+      "id": "todo-6",
       "earned": false,
       "hint": "Not yet."
     }

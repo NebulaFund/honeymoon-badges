@@ -123,9 +123,17 @@ function trimToBadge(img) {
     if (k >= RAYS) k = RAYS - 1;
     if (r > far[k]) { far[k] = r; fx[k] = x; fy[k] = y; }
   }
+  // Throw out angles whose outermost edge is nowhere near the typical one before fitting.
+  // The generated art often carries a sparkle watermark in a corner, far outside the badge;
+  // left in, it drags the fitted circle outward for the angles that point at it.
+  const radii = [];
+  for (let k = 0; k < RAYS; k++) if (far[k] > 0) radii.push(far[k]);
+  if (radii.length < RAYS * 0.5) return null;
+  const med = radii.slice().sort((a, b) => a - b)[radii.length >> 1];
   let pts = [];
-  for (let k = 0; k < RAYS; k++) if (far[k] > 0) pts.push([fx[k], fy[k]]);
-  if (pts.length < RAYS * 0.5) return null;
+  for (let k = 0; k < RAYS; k++)
+    if (far[k] > med * 0.75 && far[k] < med * 1.25) pts.push([fx[k], fy[k]]);
+  if (pts.length < RAYS * 0.4) return null;
 
   // algebraic circle fit, twice, dropping points that miss the fitted radius
   let bcx = ecx, bcy = ecy, R = 0;

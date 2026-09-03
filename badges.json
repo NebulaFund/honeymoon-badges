@@ -1,6 +1,6 @@
 {
   "title": "Honeymoon Badges",
-  "subtitle": "May · New Zealand, 2026",
+  "subtitle": "May · New Zealand & Bora Bora",
   "footer": "",
   "badges": [
     {
@@ -52,24 +52,36 @@
       "description": "Made some duck friends."
     },
     {
-      "id": "todo-1",
-      "earned": false,
-      "hint": "Not yet."
+      "id": "teanau-glowwormcave",
+      "name": "Te Anau Glowworm Cave",
+      "tier": "silver",
+      "earned": true,
+      "image": "assets/badges/teanau-glowwormcave.jpg",
+      "description": "A boat into the dark, under a ceiling of glowworms."
     },
     {
-      "id": "todo-2",
-      "earned": false,
-      "hint": "Not yet."
+      "id": "milfordsound-cruise",
+      "name": "Milford Sound Cruise",
+      "tier": "bronze",
+      "earned": true,
+      "image": "assets/badges/milfordsound-cruise.jpg",
+      "description": "Mitre Peak, and waterfalls dropping straight into the fiord."
     },
     {
-      "id": "todo-3",
-      "earned": false,
-      "hint": "Not yet."
+      "id": "borabora-snorkeling",
+      "name": "Bora Bora Reef Snorkeling",
+      "tier": "silver",
+      "earned": true,
+      "image": "assets/badges/borabora-snorkeling.jpg",
+      "description": "Coral gardens and reef fish, straight off the lagoon."
     },
     {
-      "id": "todo-4",
-      "earned": false,
-      "hint": "Not yet."
+      "id": "borabora-mantaray",
+      "name": "Bora Bora Manta Ray",
+      "tier": "gold",
+      "earned": true,
+      "image": "assets/badges/borabora-mantaray.jpg",
+      "description": "Swimming out over the reef with the manta rays."
     },
     {
       "id": "todo-5",

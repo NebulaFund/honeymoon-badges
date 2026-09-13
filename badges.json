@@ -68,6 +68,14 @@
       "description": "Mitre Peak, and waterfalls dropping straight into the fiord."
     },
     {
+      "id": "auckland-extreme-packing",
+      "name": "Auckland Airport Extreme Packing",
+      "tier": "gold",
+      "earned": true,
+      "image": "assets/badges/auckland-extreme-packing.jpg",
+      "description": "Two weeks of New Zealand, one suitcase, and it closed."
+    },
+    {
       "id": "borabora-snorkeling",
       "name": "Bora Bora Reef Snorkeling",
       "tier": "silver",
@@ -84,12 +92,28 @@
       "description": "Swimming out over the reef with the manta rays."
     },
     {
-      "id": "todo-5",
+      "id": "bora-bora-coral-garden",
+      "name": "Bora Bora Coral Garden",
+      "tier": "platinum",
+      "earned": true,
+      "image": "assets/badges/bora-bora-coral-garden.jpg",
+      "description": "Drifting over the Coral Garden with fish on every side."
+    },
+    {
+      "id": "bora-bora-submarine-scooters",
+      "name": "Bora Bora Submarine Scooters",
+      "tier": "gold",
+      "earned": true,
+      "image": "assets/badges/bora-bora-submarine-scooters.jpg",
+      "description": "Driving a bubble-domed scooter along the lagoon floor."
+    },
+    {
+      "id": "todo-1",
       "earned": false,
       "hint": "Not yet."
     },
     {
-      "id": "todo-6",
+      "id": "todo-2",
       "earned": false,
       "hint": "Not yet."
     }

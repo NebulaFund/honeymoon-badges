@@ -40,18 +40,15 @@
   </footer>
 </div>
 
-<div class="sheet-scrim" id="scrim" hidden></div>
-<section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-name">
-  <div class="sheet-grab"></div>
-  <div class="sheet-body">
-    <div class="sheet-badge" id="sheet-badge"></div>
-    <div class="sheet-tier" id="sheet-tier"></div>
-    <h2 id="sheet-name"></h2>
-    <p class="sheet-desc" id="sheet-desc"></p>
-    <dl class="sheet-meta" id="sheet-meta"></dl>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Badge details">
+  <div class="viewer-top">
+    <span class="viewer-count" id="viewer-count" aria-live="polite"></span>
+    <button class="viewer-close" id="viewer-close" type="button">Close</button>
   </div>
-  <button class="sheet-close" id="sheet-close" type="button">Close</button>
-</section>
+  <div class="viewer-track" id="viewer-track"></div>
+  <button class="viewer-nav prev" id="viewer-prev" type="button" aria-label="Previous badge">&lsaquo;</button>
+  <button class="viewer-nav next" id="viewer-next" type="button" aria-label="Next badge">&rsaquo;</button>
+</div>
 
 <script src="app.js"></script>
 </body>

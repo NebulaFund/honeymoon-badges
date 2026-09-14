@@ -5,6 +5,15 @@ No App Store, no Xcode, no Apple Developer account.
 
 **Live:** https://nebulafund.github.io/honeymoon-badges/
 
+## What she can do
+
+- **Browse the case.** Earned badges first, locked slots after.
+- **Filter by tier.** Tap one of the four counters under the title (bronze, silver, gold,
+  platinum) to see only that tier. Tap it again, or "Show all", to go back.
+- **See a badge up close.** Tap any badge to open it full screen, then swipe left and right to
+  move through the others. Swiping follows whatever the case is showing, so inside a tier
+  filter it stays within that tier. A locked slot opens on its own.
+
 ## Adding or unlocking a badge
 
 Everything lives in `badges.json`. One entry per badge:

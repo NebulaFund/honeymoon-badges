@@ -108,9 +108,12 @@
       "description": "Driving a bubble-domed scooter along the lagoon floor."
     },
     {
-      "id": "todo-1",
-      "earned": false,
-      "hint": "Not yet."
+      "id": "bora-bora-stingray",
+      "name": "Bora Bora Stingray Friend",
+      "tier": "gold",
+      "earned": true,
+      "image": "assets/badges/bora-bora-stingray.jpg",
+      "description": "Face to face with the stingrays in the shallow lagoon."
     },
     {
       "id": "todo-2",

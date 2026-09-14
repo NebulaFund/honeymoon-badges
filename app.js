@@ -192,6 +192,8 @@ function trimToBadge(img) {
 }
 
 /* ---------- render ---------- */
+let allBadges = [], tierFilter = null;
+
 function render({ data, stale }) {
   const tray = $("tray");
   if (!data) {
@@ -202,33 +204,65 @@ function render({ data, stale }) {
   $("case-title").textContent = data.title || "Badge Case";
   document.title = data.title || "Badge Case";
 
-  const badges = (data.badges || []).slice().sort((a, b) => {
+  allBadges = (data.badges || []).slice().sort((a, b) => {
     if (a.earned !== b.earned) return a.earned ? -1 : 1;        // earned first
     if (a.earned) return (b.earnedDate || "").localeCompare(a.earnedDate || ""); // newest first
     return (TIERS[a.tier]?.order ?? 99) - (TIERS[b.tier]?.order ?? 99);
   });
 
-  const earned = badges.filter(b => b.earned);
+  const earned = allBadges.filter(b => b.earned);
   // number each earned badge by the order she got it — "#3 of 12"
   earned.slice().sort((a, b) => (a.earnedDate || "").localeCompare(b.earnedDate || ""))
-        .forEach((b, i) => { b._num = i + 1; b._total = badges.length; });
-  const pct = badges.length ? Math.round((earned.length / badges.length) * 100) : 0;
+        .forEach((b, i) => { b._num = i + 1; b._total = allBadges.length; });
+  const pct = allBadges.length ? Math.round((earned.length / allBadges.length) * 100) : 0;
 
   $("case-subtitle").textContent = data.subtitle || `${earned.length} badges collected`;
   $("ring-pct").textContent = pct + "%";
-  $("ring-count").textContent = `${earned.length} / ${badges.length}`;
+  $("ring-count").textContent = `${earned.length} / ${allBadges.length}`;
   const C = 2 * Math.PI * 43;
   requestAnimationFrame(() => { $("ring-fill").style.strokeDashoffset = C * (1 - pct / 100); });
 
-  // tier counters
+  // the tier counters double as filters: tap one to see only that tier, tap again for all
   $("tier-bar").innerHTML = Object.entries(TIERS).map(([key, t]) => {
     const n = earned.filter(b => b.tier === key).length;
-    return `<span class="tier-chip${n ? "" : " empty"}" data-t="${key}"><i></i><b>${n}</b></span>`;
+    return `<button type="button" class="tier-chip" data-t="${key}" aria-pressed="false"
+              aria-label="${t.label}: ${n} earned"${n ? "" : " disabled"}><i></i><b>${n}</b></button>`;
   }).join("");
+  $("tier-bar").querySelectorAll(".tier-chip").forEach(chip =>
+    chip.addEventListener("click", () => {
+      tierFilter = tierFilter === chip.dataset.t ? null : chip.dataset.t;
+      drawTray();
+    }));
 
-  // slots
+  drawTray();
+  $("foot-note").textContent = stale ? "Showing your saved copy — offline" : (data.footer || "");
+}
+
+function drawTray() {
+  const tray = $("tray");
+  document.querySelectorAll(".tier-chip").forEach(c => {
+    const on = c.dataset.t === tierFilter;
+    c.classList.toggle("on", on);
+    c.setAttribute("aria-pressed", String(on));
+  });
+  $("tier-bar").classList.toggle("filtering", !!tierFilter);
+
+  // a filter shows only earned badges of that tier; locked slots have no tier to match
+  const visible = tierFilter ? allBadges.filter(b => b.earned && b.tier === tierFilter) : allBadges;
+  const swipeable = visible.filter(b => b.earned);
+
   tray.innerHTML = "";
-  badges.forEach(b => {
+  if (tierFilter) {
+    const t = TIERS[tierFilter];
+    const note = document.createElement("div");
+    note.className = "filter-note";
+    note.innerHTML = `<span><i style="--dot:${t.glow}"></i>${t.label} · ${visible.length} badge${visible.length === 1 ? "" : "s"}</span>
+                      <button type="button">Show all</button>`;
+    note.querySelector("button").addEventListener("click", () => { tierFilter = null; drawTray(); });
+    tray.appendChild(note);
+  }
+
+  visible.forEach(b => {
     const glow = TIERS[b.tier]?.glow || "#cfa64f";
     const el = document.createElement("button");
     el.className = "slot";
@@ -240,47 +274,71 @@ function render({ data, stale }) {
     el.innerHTML = `
       <span class="socket">${b.image ? '<img alt="">' : ""}</span>
       <span class="name">${b.earned ? escapeHtml(b.name) : "· · ·"}</span>`;
-    if (b.image) prepareArt(b.image).then(url => {
-      b._art = url;
-      el.querySelector("img").src = url;
-      if (openBadge === b) $("sheet-badge").innerHTML = `<img src="${url}" alt="">`;
-    });
-    el.addEventListener("click", () => openSheet(b, glow));
+    if (b.image) prepareArt(b.image).then(url => { el.querySelector("img").src = url; });
+    // earned badges open into a viewer she can swipe through; a locked one opens on its own
+    el.addEventListener("click", () =>
+      b.earned ? openViewer(swipeable, swipeable.indexOf(b)) : openViewer([b], 0));
     tray.appendChild(el);
   });
-
-  $("foot-note").textContent = stale ? "Showing your saved copy — offline" : (data.footer || "");
 }
 
-/* ---------- detail sheet ---------- */
-let openBadge = null;
-function openSheet(b, glow) {
-  openBadge = b;
-  const sheet = $("sheet"), scrim = $("scrim");
-  sheet.style.setProperty("--glow", glow);
-  sheet.dataset.earned = String(!!b.earned);
+/* ---------- viewer ----------
+   Full screen, one badge per page, swipe sideways through whatever the case is showing.
+   Paging is native horizontal scroll-snap, so it moves with the phone's own momentum. */
+let viewerList = [], viewerIndex = 0;
 
-  const art = b._art || b.image;
-  $("sheet-badge").innerHTML = art ? `<img src="${art}" alt="">` : `<span class="sheet-noart"></span>`;
-  const tierEl = $("sheet-tier");
-  tierEl.textContent = b.earned ? (TIERS[b.tier]?.label || "") : "Locked";
-  tierEl.hidden = false;
-
-  $("sheet-name").textContent = b.earned ? b.name : "Not yet earned";
-  $("sheet-desc").textContent = b.earned
-    ? (b.description || "")
-    : (b.hint || "Keep going — this one is still waiting.");
-
+function slideHTML(b) {
+  const t = TIERS[b.tier];
   const meta = [];
   if (b.earned && b.earnedDate) meta.push(`<div><dt>Earned</dt><dd>${formatDate(b.earnedDate)}</dd></div>`);
   if (b.earned) meta.push(`<div><dt>Number</dt><dd>#${b._num} of ${b._total}</dd></div>`);
-  $("sheet-meta").innerHTML = meta.join("");
+  const desc = b.earned ? (b.description || "") : (b.hint || "Keep going — this one is still waiting.");
+  return `
+    <article class="slide" data-earned="${!!b.earned}" style="--glow:${t?.glow || "#cfa64f"}">
+      <div class="slide-badge">${b.image ? '<img alt="">' : '<span class="slide-noart"></span>'}</div>
+      <div class="slide-text">
+        <span class="tier-pill">${b.earned ? (t?.label || "") : "Locked"}</span>
+        <h2>${b.earned ? escapeHtml(b.name) : "Not yet earned"}</h2>
+        <p class="slide-desc">${escapeHtml(desc)}</p>
+        <dl class="slide-meta">${meta.join("")}</dl>
+      </div>
+    </article>`;
+}
 
-  scrim.hidden = false; sheet.hidden = false;
+function openViewer(list, index) {
+  viewerList = list;
+  const track = $("viewer-track");
+  track.innerHTML = list.map(slideHTML).join("");
+  track.querySelectorAll(".slide").forEach((slide, i) => {
+    const img = slide.querySelector("img");
+    if (img) prepareArt(list[i].image).then(url => { img.src = url; });
+  });
+  $("viewer").hidden = false;
+  document.body.classList.add("viewing");
+  track.scrollLeft = index * track.clientWidth;      // after unhiding, so the width is real
+  syncViewer();
+  $("viewer-close").focus({ preventScroll: true });
   if (navigator.vibrate) navigator.vibrate(8);
 }
-function closeSheet() {
-  openBadge = null; $("sheet").hidden = true; $("scrim").hidden = true; }
+
+function closeViewer() {
+  $("viewer").hidden = true;
+  document.body.classList.remove("viewing");
+  $("viewer-track").innerHTML = "";
+}
+
+function syncViewer() {
+  const track = $("viewer-track"), n = viewerList.length;
+  viewerIndex = Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+  $("viewer-count").textContent = n > 1 ? `${viewerIndex + 1} / ${n}` : "";
+  $("viewer-prev").hidden = n < 2 || viewerIndex === 0;
+  $("viewer-next").hidden = n < 2 || viewerIndex === n - 1;
+}
+
+function step(dir) {
+  const track = $("viewer-track");
+  track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+}
 
 /* ---------- helpers ---------- */
 function formatDate(iso) {
@@ -293,9 +351,22 @@ function escapeHtml(s) {
 }
 
 /* ---------- boot ---------- */
-$("sheet-close").addEventListener("click", closeSheet);
-$("scrim").addEventListener("click", closeSheet);
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+$("viewer-close").addEventListener("click", closeViewer);
+$("viewer-prev").addEventListener("click", () => step(-1));
+$("viewer-next").addEventListener("click", () => step(1));
+$("viewer-track").addEventListener("scroll", () => requestAnimationFrame(syncViewer), { passive: true });
+document.addEventListener("keydown", e => {
+  if ($("viewer").hidden) return;
+  if (e.key === "Escape") closeViewer();
+  if (e.key === "ArrowRight") step(1);
+  if (e.key === "ArrowLeft") step(-1);
+});
+// keep the same badge in view when the phone rotates
+addEventListener("resize", () => {
+  if ($("viewer").hidden) return;
+  const track = $("viewer-track");
+  track.scrollLeft = viewerIndex * track.clientWidth;
+});
 
 loadData().then(render);
 

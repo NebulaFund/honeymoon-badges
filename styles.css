@@ -21,6 +21,8 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* components set their own display, which would otherwise beat the hidden attribute */
+[hidden]{display:none !important}
 html,body{margin:0;height:100%}
 body{
   background:
@@ -90,7 +92,32 @@ body{
 .tier-chip[data-t=gold]   i{background:var(--gold);box-shadow:0 0 7px var(--gold)}
 .tier-chip[data-t=platinum] i{background:var(--plat);box-shadow:0 0 7px var(--plat)}
 .tier-chip b{font-weight:600}
-.tier-chip.empty{opacity:.34}
+.tier-chip[data-t=bronze]{--c:var(--bronze)}
+.tier-chip[data-t=silver]{--c:var(--silver)}
+.tier-chip[data-t=gold]{--c:var(--gold)}
+.tier-chip[data-t=platinum]{--c:var(--plat)}
+button.tier-chip{appearance:none;color:inherit;font-family:inherit;cursor:pointer;
+  transition:background var(--tap),border-color var(--tap),opacity var(--tap),transform var(--tap)}
+button.tier-chip:active{transform:scale(.95)}
+button.tier-chip:disabled{opacity:.34;cursor:default}
+.tier-chip.on{
+  border-color:var(--c);
+  background:color-mix(in srgb, var(--c) 16%, transparent);
+  box-shadow:0 0 16px -5px var(--c);
+}
+.tier-bar.filtering .tier-chip:not(.on):not(:disabled){opacity:.5}
+.tier-chip:focus-visible,.filter-note button:focus-visible,.viewer-close:focus-visible,.viewer-nav:focus-visible{
+  outline:2px solid var(--gold);outline-offset:2px}
+
+/* shown above the grid while a tier filter is on */
+.filter-note{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;color:var(--ink-2);margin:-4px 2px -6px;
+}
+.filter-note i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;
+  background:var(--dot);box-shadow:0 0 7px var(--dot);vertical-align:1px}
+.filter-note button{appearance:none;background:none;border:0;padding:8px 0 8px 12px;cursor:pointer;
+  color:var(--gold);font:600 13px/1 -apple-system,system-ui,sans-serif}
 
 /* ---------- tray (the case interior) ---------- */
 .tray{
@@ -165,59 +192,80 @@ body{
 
 .case-foot{text-align:center;font-size:11px;color:var(--ink-3);letter-spacing:.03em}
 
-/* ---------- detail sheet ---------- */
-.sheet-scrim{
-  position:fixed;inset:0;background:rgba(6,4,12,.66);
-  -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
-  z-index:20;animation:fade .22s ease both;
+/* ---------- viewer: full screen, one badge per page, swipe between ---------- */
+body.viewing{overflow:hidden}
+.viewer{
+  position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+  background:
+    radial-gradient(90% 55% at 50% 32%, rgba(40,86,60,.55) 0%, transparent 70%),
+    #050e09;                                   /* solid: nothing of the case shows through */
+  animation:fade .2s ease both;
 }
-.sheet{
-  position:fixed;left:0;right:0;bottom:0;z-index:21;
-  max-width:720px;margin:0 auto;
-  background:linear-gradient(180deg,var(--case-2),var(--case) 60%);
-  border:1px solid var(--line-2);border-bottom:0;
-  border-radius:26px 26px 0 0;
-  box-shadow:0 -22px 60px -20px #000;
-  padding:10px 22px calc(env(safe-area-inset-bottom) + 18px);
-  animation:rise .34s cubic-bezier(.2,.9,.25,1) both;
-  text-align:center;
+.viewer-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px 4px;
 }
-.sheet-grab{width:38px;height:4px;border-radius:4px;background:var(--line-2);margin:0 auto 6px}
-.sheet-badge{
-  width:150px;height:150px;margin:10px auto 4px;display:grid;place-items:center;
-  border-radius:50%;
-  background:radial-gradient(circle at 50% 40%, rgba(255,255,255,.07), transparent 65%);
+.viewer-count{font-size:13px;color:var(--ink-3);letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.viewer-close{
+  appearance:none;cursor:pointer;padding:9px 17px;border-radius:100px;
+  background:rgba(255,255,255,.08);border:1px solid var(--line-2);
+  color:var(--ink);font:600 14px/1 -apple-system,system-ui,sans-serif;
 }
-.sheet-badge img,.sheet-badge svg{width:100%;height:100%;object-fit:contain;
-  filter:drop-shadow(0 10px 22px rgba(0,0,0,.6)) drop-shadow(0 0 26px var(--glow,transparent));
-  animation:pop .45s cubic-bezier(.2,1.3,.4,1) both;
+.viewer-close:active{background:rgba(255,255,255,.14)}
+.viewer-track{
+  flex:1;display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
-/* dim via filter, not opacity — the pop animation ends at opacity:1 and would win */
-.sheet[data-earned="false"] .sheet-badge img{filter:brightness(0) opacity(.45)}
-.sheet-meta:empty,.sheet-desc:empty{display:none}
-
-.sheet-tier{
-  display:inline-flex;align-items:center;gap:7px;
+.viewer-track::-webkit-scrollbar{display:none}
+.slide{
+  flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  padding:6px 24px calc(env(safe-area-inset-bottom) + 30px);
+  text-align:center;overflow-y:auto;
+}
+.slide-badge{width:min(84vw, 48vh, 440px);aspect-ratio:1;display:grid;place-items:center}
+.slide-badge img{
+  width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 18px 34px rgba(0,0,0,.65))
+         drop-shadow(0 0 40px color-mix(in srgb, var(--glow) 50%, transparent));
+}
+.slide[data-earned="false"] .slide-badge img{filter:brightness(0) opacity(.45)}
+.slide-noart{
+  width:76%;aspect-ratio:1;border-radius:50%;display:block;
+  background:radial-gradient(circle at 50% 40%, #0c1d14, #050f0a 72%);
+  box-shadow:0 10px 22px rgba(0,0,0,.7) inset, 0 -1px 0 rgba(255,255,255,.06) inset;
+}
+.slide-text{max-width:34ch;display:flex;flex-direction:column;align-items:center}
+.tier-pill{
   font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
   padding:5px 13px;border-radius:100px;
-  border:1px solid var(--glow,var(--line-2));color:var(--glow,var(--ink-2));
-  background:color-mix(in srgb, var(--glow,#fff) 11%, transparent);
+  border:1px solid var(--glow);color:var(--glow);
+  background:color-mix(in srgb, var(--glow) 11%, transparent);
 }
-.sheet h2{margin:11px 0 0;font:700 25px/1.2 "SF Pro Display",-apple-system,system-ui,sans-serif;letter-spacing:-.025em}
-.sheet-desc{margin:9px auto 0;max-width:38ch;color:var(--ink-2);font-size:14.5px}
-.sheet-meta{
-  margin:18px 0 0;padding:13px 4px 3px;border-top:1px solid var(--line);
-  display:flex;justify-content:center;gap:26px;
+.slide h2{margin:12px 0 0;font:700 26px/1.2 "SF Pro Display",-apple-system,system-ui,sans-serif;
+  letter-spacing:-.025em;text-wrap:balance}
+.slide-desc{margin:8px 0 0;color:var(--ink-2);font-size:15px;text-wrap:pretty}
+.slide-desc:empty,.slide-meta:empty{display:none}
+.slide-meta{
+  align-self:stretch;margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;justify-content:center;gap:28px;
 }
-.sheet-meta div{text-align:center}
-.sheet-meta dt{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.sheet-meta dd{margin:4px 0 0;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
-.sheet-close{
-  margin-top:18px;width:100%;padding:14px;border-radius:15px;
-  background:rgba(255,255,255,.07);border:1px solid var(--line-2);
-  color:var(--ink);font:600 15px/1 -apple-system,system-ui,sans-serif;cursor:pointer;
+.slide-meta dt{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.slide-meta dd{margin:4px 0 0;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* arrows only where there's a mouse; on the phone it's a swipe */
+.viewer-nav{display:none}
+@media (hover:hover) and (pointer:fine){
+  .viewer-nav{
+    display:grid;place-items:center;position:absolute;top:42%;
+    width:46px;height:46px;border-radius:50%;cursor:pointer;
+    background:rgba(255,255,255,.08);border:1px solid var(--line-2);
+    color:var(--ink);font:400 26px/1 -apple-system,system-ui,sans-serif;
+  }
+  .viewer-nav.prev{left:16px}
+  .viewer-nav.next{right:16px}
 }
-.sheet-close:active{background:rgba(255,255,255,.12)}
 
 @keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -225,11 +273,3 @@ body{
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
 
 .empty-state{grid-column:1/-1;text-align:center;color:var(--ink-3);font-size:14px;padding:40px 10px}
-
-/* a badge whose artwork doesn't exist yet — an empty disc waiting to be filled */
-.sheet-noart{
-  width:132px;height:132px;border-radius:50%;
-  background:radial-gradient(circle at 50% 40%, #0c1d14, #050f0a 72%);
-  box-shadow:0 8px 18px rgba(0,0,0,.7) inset, 0 -1px 0 rgba(255,255,255,.06) inset;
-  display:block;
-}
